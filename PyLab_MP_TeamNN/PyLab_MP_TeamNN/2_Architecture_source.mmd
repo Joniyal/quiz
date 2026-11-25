@@ -1,0 +1,12 @@
+flowchart TB
+    U["<b>User</b><br/>chooses answers, clicks Submit Answer and Restart Quiz"]
+
+    UI["<b>UI layer: Tkinter window (main.py, classes QuizApp and RoundedButton)</b><br/>Question label, 4 option buttons, progress bar, question number [FR2]<br/>Submit Answer button, result label (Correct / Wrong / warning) [FR3, NFR2]<br/>Timer label, 60-second countdown [FR6]<br/>Result screen, confetti on full marks [FR4]<br/>Restart Quiz button [FR5]<br/>Message boxes for file and save errors [FR1, FR4, NFR2]"]
+
+    LG["<b>Logic layer: class QuizLogic (logic.py)</b><br/>load_questions(): read and validate the CSV [FR1]<br/>start_quiz(): shuffle, reset score and index [FR1, FR5]<br/>current_question(): next question or None [FR2]<br/>submit_answer(): check option, score +1 [FR3]<br/>skip_question(): move on without scoring [FR6]<br/>save_score(): append score, total, percentage [FR4, NFR3]"]
+
+    DT["<b>Data layer</b><br/>In memory: questions list of dicts, current_index, score [FR2, FR3]<br/>File data/questions.csv (read) [FR1]<br/>File data/scores.csv (append) [FR4, NFR3]"]
+
+    U <-->|"selected option, button clicks / question, result, final score"| UI
+    UI <-->|"selected index, restart or skip request / correct or wrong, next question, error"| LG
+    LG <-->|"load questions, append score row / question rows, saved scores"| DT
