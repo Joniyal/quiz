@@ -255,6 +255,8 @@ class QuizApp:
         except (OSError, ValueError) as error:
             messagebox.showerror("Quiz Error", str(error))
             self.question_label.config(text="Quiz could not start.")
+            self.options_frame.pack_forget()
+            self.submit_button.grid_remove()
             return
         self.show_question()
 
@@ -267,10 +269,13 @@ class QuizApp:
         if question is None:
             self.show_result()
             return
+        self.submit_button.enabled = True
         self.submit_button.grid()
         self.options_frame.pack(
             before=self.result_label, fill="x", padx=22, pady=2
         )
+        if not self.timer_label.winfo_ismapped():
+            self.timer_label.pack(side="right")
         for button in self.option_buttons:
             button.config(state="normal")
         number = self.logic.current_index + 1
@@ -313,6 +318,9 @@ class QuizApp:
             self.result_label.config(text="Correct!", fg=self.colors["green"])
         else:
             self.result_label.config(text="Wrong!", fg=self.colors["red"])
+        self.submit_button.enabled = False
+        for button in self.option_buttons:
+            button.config(state="disabled")
         self.transition_id = self.root.after(500, self.show_question)
 
     def update_timer(self):
@@ -376,6 +384,9 @@ class QuizApp:
             text="Time expired - question skipped.",
             fg=self.colors["red"]
         )
+        self.submit_button.enabled = False
+        for button in self.option_buttons:
+            button.config(state="disabled")
         self.transition_id = self.root.after(500, self.show_question)
 
     def select_option(self, selected):
@@ -411,25 +422,17 @@ class QuizApp:
 
         button = self.option_buttons[index]
         start_color = button.cget("bg")
-        start_rgb = tuple(
-            int(start_color[position:position + 2], 16)
-            for position in (1, 3, 5)
-        )
-        target_rgb = tuple(
-            int(target_color[position:position + 2], 16)
-            for position in (1, 3, 5)
-        )
         frame_count = 8
         frame = 0
 
         def animate_frame():
             nonlocal frame
             frame += 1
-            rgb = tuple(
-                round(start + (end - start) * frame / frame_count)
-                for start, end in zip(start_rgb, target_rgb)
+            button.config(
+                bg=self.color_gradient(
+                    start_color, target_color, frame / frame_count
+                )
             )
-            button.config(bg="#{:02X}{:02X}{:02X}".format(*rgb))
             if frame == frame_count:
                 self.hover_jobs.pop(index, None)
             else:
@@ -472,7 +475,7 @@ class QuizApp:
     def show_result(self):
         """FR4: Save the final score and show the result screen."""
         self.cancel_timers()
-        self.timer_label.config(text="")
+        self.timer_label.pack_forget()
         total = len(self.logic.questions)
         percentage = (self.logic.score * 100) // total if total else 0
         try:
@@ -498,6 +501,8 @@ class QuizApp:
 
     def start_celebration(self):
         """Show a transparent confetti animation across the app window."""
+        if sys.platform != "win32":
+            return
         self.root.update_idletasks()
         transparent_color = "#010203"
         self.celebration_window = tk.Toplevel(self.root)

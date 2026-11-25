@@ -33,19 +33,22 @@ class QuizLogic:
                 if reader.fieldnames is None or not required.issubset(reader.fieldnames):
                     raise ValueError("Question file has invalid columns.")
                 for row in reader:
-                    options = [row["option1"].strip(), row["option2"].strip(),
-                               row["option3"].strip(), row["option4"].strip()]
-                    if not row["question"].strip() or any(not option for option in options):
+                    question = (row.get("question") or "").strip()
+                    options = [
+                        (row.get(f"option{index}") or "").strip()
+                        for index in range(1, 5)
+                    ]
+                    if not question or any(not option for option in options):
                         raise ValueError("Question file contains an empty field.")
-                    answer = int(row["answer"])
+                    answer = int((row.get("answer") or "").strip())
                     if answer < 0 or answer > 3:
                         raise ValueError("Answer index must be between 0 and 3.")
                     questions.append({
-                        "question": row["question"].strip(),
+                        "question": question,
                         "options": options,
                         "answer": answer,
                     })
-        except (csv.Error, KeyError, ValueError) as error:
+        except (csv.Error, KeyError, ValueError, AttributeError) as error:
             raise ValueError("Could not read question file: " + str(error))
         if len(questions) != 10:
             raise ValueError("Question file must contain exactly 10 questions.")
